@@ -4,7 +4,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Universal Converter — American to Metric & Universal",
   description: "Convert between American, Imperial, and Universal units. Length, temperature, weight, volume, data, area, speed, time, pressure, energy, light, power, and angle.",
-  viewport: "width=device-width, initial-scale=1",
+};
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
