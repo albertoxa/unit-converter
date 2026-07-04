@@ -1,17 +1,9 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Callable, Optional
-import json
+from mangum import Mangum
 
 app = FastAPI(title="Universal Converter API")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # =============================================================================
 # CONVERSION ENGINE
@@ -20,7 +12,7 @@ app.add_middleware(
 class CategoryRegistry:
     def __init__(self):
         self._categories: Dict[str, dict] = {}
-
+    
     def register(self, category_id: str, units: Dict[str, float], base_unit: str,
                  symbols: Optional[Dict[str, str]] = None,
                  names: Optional[Dict[str, str]] = None,
@@ -32,14 +24,14 @@ class CategoryRegistry:
             "names": names or {u: u.replace("_", " ").title() for u in units},
             "formulas": formulas or {}
         }
-
+    
     def convert(self, category: str, value: float, from_unit: str, to_unit: str) -> float:
         cat = self._categories[category]
         if from_unit in cat["formulas"] or to_unit in cat["formulas"]:
             return self._formula_convert(cat, value, from_unit, to_unit)
         base_value = value * cat["units"][from_unit]
         return base_value / cat["units"][to_unit]
-
+    
     def _formula_convert(self, cat, value, from_u, to_u):
         base = cat["base_unit"]
         formulas = cat["formulas"]
@@ -50,7 +42,7 @@ class CategoryRegistry:
         if to_u == base:
             return base_val
         return formulas[to_u]["from_base"](base_val)
-
+    
     def get_metadata(self) -> Dict:
         return {
             cat_id: {
@@ -152,7 +144,7 @@ registry.register("energy",
     symbols={"joule":"J","kilojoule":"kJ","calorie":"cal","kilocalorie":"kcal",
              "watt_hour":"Wh","kilowatt_hour":"kWh","british_thermal_unit":"BTU","electronvolt":"eV"})
 
-# --- LIGHT / LUMINANCE ---
+# --- LIGHT ---
 registry.register("luminance",
     units={"lumen":1.0,"lux":1.0,"candela":1.0,"foot_candle":10.764,"nit":1.0},
     base_unit="lumen",
@@ -172,7 +164,7 @@ registry.register("angle",
     symbols={"degree":"°","radian":"rad","gradian":"gon","minute":"′","second":"″"})
 
 # =============================================================================
-# API ENDPOINTS
+# API ENDPOINTS — MUST use /api/ prefix because Vercel passes full path
 # =============================================================================
 
 class ConvertRequest(BaseModel):
@@ -181,11 +173,15 @@ class ConvertRequest(BaseModel):
     from_unit: str
     to_unit: str
 
-@app.get("/categories")
+@app.get("/api/health")
+def health():
+    return {"status": "healthy", "categories": len(registry._categories)}
+
+@app.get("/api/categories")
 def get_categories():
     return registry.get_metadata()
 
-@app.post("/convert")
+@app.post("/api/convert")
 def convert_units(req: ConvertRequest):
     try:
         result = registry.convert(req.category, req.value, req.from_unit, req.to_unit)
@@ -201,6 +197,7 @@ def convert_units(req: ConvertRequest):
     except Exception as e:
         return {"error": str(e), "result": None}
 
-@app.get("/health")
-def health():
-    return {"status": "healthy", "categories": len(registry._categories)}
+# =============================================================================
+# CRITICAL: This handler bridges FastAPI → Vercel serverless runtime
+# =============================================================================
+handler = Mangum(app)
