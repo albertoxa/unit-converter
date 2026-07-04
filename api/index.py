@@ -181,11 +181,11 @@ class ConvertRequest(BaseModel):
     from_unit: str
     to_unit: str
 
-@app.get("/api/categories")
+@app.get("/categories")
 def get_categories():
     return registry.get_metadata()
 
-@app.post("/api/convert")
+@app.post("/convert")
 def convert_units(req: ConvertRequest):
     try:
         result = registry.convert(req.category, req.value, req.from_unit, req.to_unit)
@@ -201,6 +201,6 @@ def convert_units(req: ConvertRequest):
     except Exception as e:
         return {"error": str(e), "result": None}
 
-@app.get("/api/health")
+@app.get("/health")
 def health():
     return {"status": "healthy", "categories": len(registry._categories)}
