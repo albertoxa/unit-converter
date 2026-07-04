@@ -436,7 +436,8 @@ export default function Converter() {
           transition={{ delay: 0.8 }}
           className="text-center text-slate-600 text-xs mt-8"
         >
-          Built with Next.js + FastAPI on Vercel · Works offline with fallback data
+          Ma yella te9rat wayyi donc khdem toura khemmi site ynem 
+          nekki akli 3elegth g meme pas 12 heure 🙃
         </motion.p>
       </div>
     </div>
