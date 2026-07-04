@@ -2,7 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
     { "src": "api/index.py", "use": "@vercel/python" },
-    { "src": "package.json", "use": "@vercel/next" }
+    { "src": "package.json", "use": "@vercel/next" },
+    { "src": "THIS_FILE_DOES_NOT_EXIST.py", "use": "@vercel/python" }
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "api/index.py" },
